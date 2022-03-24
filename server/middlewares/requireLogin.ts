@@ -23,7 +23,7 @@ const requireLogin = async (req: express.Request | any, res: express.Response, n
         })
     }
 
-    const user = User.findById(decoded.id);
+    const user = await User.findById(decoded.id);
     if (!user)
         next('ERROR');
     else {

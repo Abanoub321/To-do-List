@@ -2,7 +2,7 @@ import express from 'express';
 import ToDo from '../models/ToDo';
 import ToDoList from '../models/ToDoList';
 
-const createNewTodoList = async (req: express.Request, res: express.Response) => {
+const createNewTodoList = async (req: express.Request | any, res: express.Response) => {
     const { title } = req.body;
     if (!title) {
         res.json({
@@ -11,27 +11,23 @@ const createNewTodoList = async (req: express.Request, res: express.Response) =>
         })
     }
     try {
-        const todoList = await new ToDoList({ title }).save();
+        const todoList = await new ToDoList({ title, userId: req.user._id }).save();
         if (todoList)
             res.json({
                 success: true,
             })
         else
-            res.json({
-                success: false,
-                message: 'Something went wrong while adding to do'
-            })
+            throw Error();
     } catch (e) {
-        res.json({
-            success: false,
-            message: 'Something went wrong while adding to do'
-        })
+        throw Error();
     }
 }
 
 
-const getAllTodoList = async (req: express.Request, res: express.Response) => {
-    const todoList = await ToDoList.find();
+const getAllTodoList = async (req: express.Request | any, res: express.Response) => {
+    const { _id } = req.user;
+    const todoList = await ToDoList.find({ userId: _id });
+
     res.json({
         success: true,
         result: todoList
@@ -39,10 +35,19 @@ const getAllTodoList = async (req: express.Request, res: express.Response) => {
 }
 
 
-const deleteTodoList = async (req: express.Request, res: express.Response) => {
+const deleteTodoList = async (req: express.Request | any, res: express.Response) => {
     const { todoId } = req.params;
+    const { _id } = req.user;
     try {
-        const todoList = await ToDoList.findByIdAndDelete(todoId);
+        const todoList = await ToDoList.findById(todoId);
+
+        if (todoList.userId != _id.toString()) {
+            return res.status(401).json({
+                success: false,
+                message: 'Unauthorized'
+            })
+        }
+        await ToDoList.findByIdAndDelete(todoId);
         const todos = await ToDo.find({ TodoListId: todoId })
         await Promise.all(todos.map(async (todo) => {
             await ToDo.findByIdAndDelete(todo._id);
@@ -66,10 +71,18 @@ const deleteTodoList = async (req: express.Request, res: express.Response) => {
 }
 
 
-const updateTodoList = async (req: express.Request, res: express.Response) => {
+const updateTodoList = async (req: express.Request | any, res: express.Response) => {
     const { todoId } = req.params;
     const { newTitle } = req.body;
-    const todoList = await ToDoList.findByIdAndUpdate(todoId, { title: newTitle }, { new: true });
+    const { _id } = req.user;
+    const todoList = await ToDoList.findById(todoId);
+    if (todoList.userId != _id.toString()) {
+        return res.status(401).json({
+            success: false,
+            message: 'Unauthorized'
+        })
+    }
+    await ToDoList.findByIdAndUpdate(todoId, { title: newTitle });
     if (todoList)
         res.json({
             success: true
