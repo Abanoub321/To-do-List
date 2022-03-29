@@ -1,4 +1,5 @@
 import { Schema, model } from 'mongoose';
+import Status from './StatusEnum';
 
 
 const TodoListSchema = new Schema({
@@ -9,6 +10,10 @@ const TodoListSchema = new Schema({
     userId: {
         type: Schema.Types.ObjectId,
         required: true
+    },
+    status: {
+        type: String,
+        default: Status.private
     }
 })
 
