@@ -1,8 +1,5 @@
 import express from 'express';
-import Status from '../models/StatusEnum';
 import ToDo from '../models/ToDo';
-import ToDoList from '../models/ToDoList';
-import ShareWith from '../models/TodoShareWith';
 
 
 const getTodos = async (req: express.Request, res: express.Response) => {
@@ -94,50 +91,5 @@ const deleteTodo = async (req: express.Request, res: express.Response) => {
     }
 }
 
-const changeShareWith = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    const { listId } = req.params;
-    const { shareWith } = req.body;
 
-    try {
-        if (shareWith === 'public') {
-            await ToDoList.findByIdAndUpdate(listId, { status: Status.public });
-        }
-        else if (shareWith === 'private') {
-            await ToDoList.findByIdAndUpdate(listId, { status: Status.private });
-
-        }
-        else {
-
-            await ToDoList.findByIdAndUpdate(listId, { status: Status.onlyWith });
-            const { userId } = req.body;
-            const listShare = await ShareWith.findOne({ todoListId: listId });
-            if (!listShare) {
-                await new ShareWith({ todoListId: listId, usersId: [userId] }).save();
-            }
-            else {
-                if (!listShare.usersId.includes(userId)) {
-
-                    await ShareWith.findByIdAndUpdate(listShare._id,
-                        {
-                            $push: {
-                                usersId: userId
-                            }
-                        });
-                } else {
-                    return res.status(400).json({
-                        success: false,
-                        message: 'User already added'
-                    })
-                }
-            }
-        }
-        return res.status(200).json({
-            success: true
-        })
-    } catch (error) {
-        console.log(error);
-        next(error);
-    }
-}
-
-export { createNewToDO, getTodos, updateTodo, deleteTodo, changeShareWith };
+export { createNewToDO, getTodos, updateTodo, deleteTodo };

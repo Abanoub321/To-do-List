@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { changeShareWith, createNewToDO, deleteTodo, getTodos, updateTodo } from '../controller/todoController';
+import { createNewToDO, deleteTodo, getTodos, updateTodo } from '../controller/todoController';
+import { changeShareWith } from '../controller/todolistController';
 
 
 const todoRouter = Router({ mergeParams: true });
